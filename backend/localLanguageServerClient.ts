@@ -3,6 +3,7 @@ import * as http from "http";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { Credentials } from "./credentialStore";
+import { ModelQuotaInfo, AccountQuota } from "./quotaService";
 
 const execAsync = promisify(exec);
 
@@ -329,7 +330,8 @@ export async function fetchCredentialsFromLanguageServer(): Promise<Credentials 
 
     console.log(
       "[LocalLS] GetUserStatus response:",
-      JSON.stringify(userStatus, null, 2),
+      userStatus.email,
+      userStatus.userTier,
     );
 
     // Extract email from GetUserStatus response
@@ -385,13 +387,19 @@ export async function fetchCredentialsFromLanguageServer(): Promise<Credentials 
       return credentials;
     }
 
+    // Extract plan name
+    const planType = (userStatus as any)?.planStatus?.planInfo?.planName || "Free";
+
     const credentials: Credentials = {
       email,
       token,
+      metadata: {
+        planType,
+      },
     };
 
     console.log(
-      `[LocalLS] Successfully fetched credentials for email: ${email}`,
+      `[LocalLS] Successfully fetched credentials for email: ${email}, plan: ${planType}`,
     );
     return credentials;
   } catch (error) {
@@ -399,6 +407,97 @@ export async function fetchCredentialsFromLanguageServer(): Promise<Credentials 
       "[LocalLS] Error fetching credentials from language server",
       error,
     );
+    return null;
+  }
+}
+
+/**
+ * Fetches and parses quota data from the local language server
+ *
+ * @param email - User email address
+ * @returns AccountQuota object or null if retrieval fails
+ */
+export async function fetchQuotaFromLanguageServer(
+  email: string,
+): Promise<AccountQuota | null> {
+  console.log(`[LocalLS] Fetching quota from language server for ${email}`);
+
+  try {
+    const response = await fetchLocalUserStatus();
+    if (!response) {
+      return null;
+    }
+    const userStatus = (response as any).userStatus;
+    console.log(
+      "[LocalLS] GetUserStatus response:",
+      userStatus.email,
+      userStatus.userTier,
+    );
+    const cascadeConfigs =
+      userStatus?.cascadeModelConfigData?.clientModelConfigs || [];
+    const planStatus = userStatus?.planStatus;
+    const userTier = userStatus?.userTier;
+
+    const parsedModels: ModelQuotaInfo[] = cascadeConfigs.map((m: any) => {
+      const quotaInfo = m.quotaInfo;
+      // If quotaInfo exists and has a resetTime but no remainingFraction, it means 0% remaining.
+      const remainingFraction =
+        quotaInfo?.remainingFraction ?? (quotaInfo?.resetTime ? 0.0 : 1.0);
+      const resetTime = quotaInfo?.resetTime || null;
+
+      return {
+        modelName: m.modelOrAlias?.model || m.label || "unknown",
+        displayName: m.label || "Unknown Model",
+        remainingFraction,
+        remainingPercent: Math.round(remainingFraction * 100),
+        resetTime,
+        resetTimeMs: resetTime ? new Date(resetTime).getTime() : null,
+      };
+    });
+
+    const result: AccountQuota = {
+      email,
+      lastFetched: Date.now(),
+      models: parsedModels,
+      claudeModels: parsedModels.filter(
+        (m) =>
+          (m.displayName?.toLowerCase().includes("claude") ?? false) ||
+          (m.displayName?.toLowerCase().includes("anthropic") ?? false) ||
+          m.modelName.toLowerCase().includes("claude"),
+      ),
+      geminiModels: parsedModels.filter(
+        (m) =>
+          (m.displayName?.toLowerCase().includes("gemini") ?? false) ||
+          m.modelName.toLowerCase().includes("gemini"),
+      ),
+      claudeQuotaPercent: null,
+      geminiQuotaPercent: null,
+      claudeResetTime: null,
+      geminiResetTime: null,
+      promptCredits: planStatus?.availablePromptCredits,
+      flowCredits: planStatus?.availableFlowCredits,
+      upgradeUri: userTier?.upgradeSubscriptionUri,
+      planType: planStatus?.planInfo?.planName || "Free",
+    };
+
+    // Calculate aggregate percentages
+    if (result.claudeModels.length > 0) {
+      result.claudeQuotaPercent = Math.min(
+        ...result.claudeModels.map((m) => m.remainingPercent),
+      );
+    }
+    if (result.geminiModels.length > 0) {
+      result.geminiQuotaPercent = Math.min(
+        ...result.geminiModels.map((m) => m.remainingPercent),
+      );
+    }
+
+    console.log(
+      `[LocalLS] Successfully parsed ${parsedModels.length} models for ${email}`,
+    );
+    return result;
+  } catch (error) {
+    console.error(`[LocalLS] Failed to fetch quota for ${email}:`, error);
     return null;
   }
 }

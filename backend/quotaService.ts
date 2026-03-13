@@ -33,6 +33,10 @@ export interface AccountQuota {
   geminiQuotaPercent: number | null;
   claudeResetTime: number | null;
   geminiResetTime: number | null;
+  promptCredits?: number;
+  flowCredits?: number;
+  upgradeUri?: string;
+  planType?: string;
 }
 
 interface FetchModelsResponse {

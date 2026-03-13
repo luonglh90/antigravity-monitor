@@ -1,0 +1,14 @@
+'use client';
+
+import { AccountProvider } from '../context/AccountContext';
+import { Dashboard } from '../components/Dashboard';
+
+export default function Home() {
+  return (
+    <AccountProvider>
+      <main className="min-h-screen bg-background text-foreground">
+        <Dashboard />
+      </main>
+    </AccountProvider>
+  );
+}

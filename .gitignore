@@ -145,3 +145,4 @@ webview-ui/node_modules/
 webview-ui/out/
 webview-ui/.next/
 .vscode-test/
+.DS_Store
