@@ -1,0 +1,7 @@
+{
+  "version": "0.4.0",
+  "testPaths": ["./out/**/*.test.js"],
+  "mocha": {
+    "timeout": 10000
+  }
+}
