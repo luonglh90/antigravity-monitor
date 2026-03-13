@@ -96,6 +96,7 @@ describe('QuotaService', () => {
         geminiQuotaPercent: 75,
         claudeResetTime: null,
         geminiResetTime: null,
+        planType: 'Pro',
       };
 
       quotaCache.setQuota(email, mockQuota);
@@ -323,6 +324,7 @@ describe('QuotaService', () => {
         geminiQuotaPercent: 75,
         claudeResetTime: null,
         geminiResetTime: null,
+        planType: 'Free',
       };
 
       const mockQuota2: AccountQuota = {
@@ -335,6 +337,7 @@ describe('QuotaService', () => {
         geminiQuotaPercent: 90,
         claudeResetTime: null,
         geminiResetTime: null,
+        planType: 'Pro',
       };
 
       quotaCache.setQuota(email1, mockQuota1);
