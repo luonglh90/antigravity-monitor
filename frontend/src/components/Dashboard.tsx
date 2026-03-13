@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { vscode } from '../lib/vscode';
-import { useAccount, AIModelQuota } from '../context/AccountContext';
-import { Login } from './Login';
-import { Header } from './Header';
+import React, { useState, useEffect } from "react";
+import { vscode } from "../lib/vscode";
+import { useAccount, AIModelQuota } from "../context/AccountContext";
+import { Login } from "./Login";
+import { Header } from "./Header";
 
 export const Dashboard: React.FC = () => {
   const {
@@ -14,7 +14,7 @@ export const Dashboard: React.FC = () => {
     loading,
     setLoading,
     setError,
-    refreshQuotas
+    refreshQuotas,
   } = useAccount();
 
   const [initialized, setInitialized] = useState(false);
@@ -25,23 +25,23 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     const messageHandler = (event: MessageEvent) => {
       const message = event.data;
-      console.log('[Dashboard] Received message:', message.command);
+      console.log("[Dashboard] Received message:", message.command);
 
       switch (message.command) {
         case "autoLoginStarted":
           setLoading(true);
           break;
         case "autoLoginSuccess":
-          console.log('[Dashboard] Auto-login success:', message.account);
+          console.log("[Dashboard] Auto-login success:", message.account);
           setCurrentAccount(message.account);
           setLoading(false);
           break;
         case "autoLoginFailed":
-          console.log('[Dashboard] Auto-login failed');
+          console.log("[Dashboard] Auto-login failed");
           setLoading(false);
           break;
         case "loginSuccess":
-          console.log('[Dashboard] Manual login success:', message.account);
+          console.log("[Dashboard] Manual login success:", message.account);
           setCurrentAccount(message.account);
           setLoading(false);
           break;
@@ -49,45 +49,52 @@ export const Dashboard: React.FC = () => {
           if (message.data) {
             setQuota(message.data);
             if (message.data.models) {
-              setModels(message.data.models);
+              updateModels(message.data.models);
             }
             // Update planType in currentAccount metadata if it changed
-            if (message.data.planType && currentAccount && currentAccount.metadata?.planType !== message.data.planType) {
+            if (
+              message.data.planType &&
+              currentAccount &&
+              currentAccount.metadata?.planType !== message.data.planType
+            ) {
               setCurrentAccount({
                 ...currentAccount,
                 metadata: {
                   ...currentAccount.metadata,
-                  planType: message.data.planType
-                }
+                  planType: message.data.planType,
+                },
               });
             }
           }
           setModelsLoading(false);
           break;
         case "accountAdded":
-          console.log('[Dashboard] Account added:', message.account);
+          console.log("[Dashboard] Account added:", message.account);
           setCurrentAccount(message.account);
           break;
         case "accountRemoved":
-          console.log('[Dashboard] Account removed, new active:', message.account);
+          console.log(
+            "[Dashboard] Account removed, new active:",
+            message.account,
+          );
           setCurrentAccount(message.account);
           if (message.quota) {
             setQuota(message.quota);
-            setModels(message.quota.models || []);
+            updateModels(message.quota.models || []);
           } else {
             setQuota(null);
-            setModels([]);
+            updateModels([]);
           }
           break;
         case "accountSwitched":
-          console.log('[Dashboard] Account switched:', message.account);
+          console.log("[Dashboard] Account switched:", message.account);
           setCurrentAccount(message.account);
           if (message.quota) {
             setQuota(message.quota);
-            setModels(message.quota.models || []);
+            updateModels(message.quota.models || []);
           } else {
             setQuota(null);
-            setModels([]);
+            updateModels([]);
           }
           setLoading(false);
           break;
@@ -106,13 +113,20 @@ export const Dashboard: React.FC = () => {
       }
     };
 
+    const updateModels = (models: any[]) => {
+      const sortedModels = [...models].sort((a, b) =>
+        a.modelName.localeCompare(b.modelName),
+      );
+      setModels(sortedModels);
+    };
+
     window.addEventListener("message", messageHandler);
 
     // Initial handshake
     if (!initialized) {
-      console.log('[Dashboard] Initializing, sending webviewReady');
+      console.log("[Dashboard] Initializing, sending webviewReady");
       setLoading(true);
-      vscode.postMessage({ command: 'webviewReady' });
+      vscode.postMessage({ command: "webviewReady" });
       setInitialized(true);
     }
 
@@ -126,11 +140,11 @@ export const Dashboard: React.FC = () => {
     if (currentAccount) {
       setModelsLoading(true);
       refreshQuotas();
-      
+
       const interval = setInterval(() => {
         refreshQuotas();
       }, 60000); // Every minute
-      
+
       return () => clearInterval(interval);
     }
   }, [currentAccount, refreshQuotas]);
@@ -161,7 +175,9 @@ export const Dashboard: React.FC = () => {
         <div className="relative">
           <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
         </div>
-        <p className="text-muted-foreground animate-pulse font-medium">Initializing accounts...</p>
+        <p className="text-muted-foreground animate-pulse font-medium">
+          Initializing accounts...
+        </p>
       </div>
     );
   }
@@ -173,61 +189,33 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="min-h-full bg-background flex flex-col">
       <Header />
-      
-      <main className="flex-1 p-6 space-y-8 overflow-y-auto">
-        {/* Credits Section */}
-        {quota && (quota.promptCredits !== undefined || quota.flowCredits !== undefined) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {quota.promptCredits !== undefined && (
-              <div className="p-4 bg-primary/5 border border-primary/10 rounded-xl flex items-center justify-between shadow-sm overflow-hidden relative group">
-                <div className="absolute top-0 right-0 p-2 opacity-5 group-hover:opacity-10 transition-opacity">
-                   <svg className="w-24 h-24 -mr-8 -mt-8" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2m-7 14l-2-4H7l3 6h4l3-6h-3l-2 4z" />
-                   </svg>
-                </div>
-                <div className="relative z-10">
-                  <p className="text-xs font-bold uppercase tracking-widest text-primary/70">Prompt Credits</p>
-                  <p className="text-3xl font-black text-primary">{quota.promptCredits}</p>
-                </div>
-                <div className="relative z-10 p-3 bg-primary/10 rounded-2xl shadow-inner">
-                  <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 24 24">
-                     <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2m-7 14l-2-4H7l3 6h4l3-6h-3l-2 4z" />
-                  </svg>
-                </div>
-              </div>
-            )}
-            {quota.flowCredits !== undefined && (
-              <div className="p-4 bg-secondary/10 border border-border/50 rounded-xl flex items-center justify-between shadow-sm overflow-hidden relative group">
-                <div className="absolute top-0 right-0 p-2 opacity-5 group-hover:opacity-10 transition-opacity">
-                    <svg className="w-24 h-24 -mr-8 -mt-8" fill="currentColor" viewBox="0 0 24 24">
-                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
-                    </svg>
-                </div>
-                <div className="relative z-10">
-                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Flow Credits</p>
-                  <p className="text-3xl font-black text-foreground">{quota.flowCredits}</p>
-                </div>
-                <div className="relative z-10 p-3 bg-secondary/50 rounded-2xl shadow-inner">
-                   <svg className="w-6 h-6 text-muted-foreground" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
-                   </svg>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
 
-        <div className="flex justify-between items-end border-t border-border/50 pt-8 mt-4">
+      <main className="flex-1 p-6 space-y-8 overflow-y-auto">
+        <div className="flex justify-between items-end border-border/50 pt-8 mt-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">AI Models Quota</h2>
-            <p className="text-muted-foreground">Monitor your API usage limits and remaining quota.</p>
+            <h4 className="text-2xl font-bold tracking-tight">
+              AI Models Quota
+            </h4>
+            <p className="text-muted-foreground">
+              Monitor your API usage limits and remaining quota.
+            </p>
           </div>
-          <button 
+          <button
             onClick={refreshQuotas}
-            className={`p-2 rounded-full hover:bg-secondary transition-all ${modelsLoading ? 'animate-spin text-primary' : 'text-muted-foreground'}`}
+            className={`p-2 rounded-full hover:bg-secondary transition-all ${modelsLoading ? "animate-spin text-primary" : "text-muted-foreground"}`}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
             </svg>
           </button>
         </div>
@@ -237,17 +225,28 @@ export const Dashboard: React.FC = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-border/50 bg-secondary/20">
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-foreground w-1/3">AI Model</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-foreground w-1/3">Remaining Quota</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-foreground w-1/3">Auto-Reset</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-foreground w-1/3">
+                    AI Model
+                  </th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-foreground w-1/3">
+                    Remaining Quota
+                  </th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-foreground w-1/3">
+                    Auto-Reset
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
                 {models.map((model) => (
-                  <tr key={model.modelName} className="group hover:bg-secondary/10 transition-colors duration-200">
+                  <tr
+                    key={model.modelName}
+                    className="group hover:bg-secondary/10 transition-colors duration-200"
+                  >
                     <td className="px-6 py-5">
                       <div className="flex items-center space-x-3">
-                        <div className={`w-2 h-2 rounded-full ${model.remainingPercent > 0 ? 'bg-green-500 animate-pulse' : 'bg-destructive shadow-[0_0_5px_rgba(var(--destructive),0.5)]'}`} />
+                        <div
+                          className={`w-2 h-2 rounded-full ${model.remainingPercent > 0 ? "bg-green-500 animate-pulse" : "bg-destructive shadow-[0_0_5px_rgba(var(--destructive),0.5)]"}`}
+                        />
                         <div>
                           <p className="font-bold text-base group-hover:text-primary transition-colors">
                             {model.displayName || model.modelName}
@@ -261,18 +260,26 @@ export const Dashboard: React.FC = () => {
                     <td className="px-6 py-5">
                       <div className="space-y-2 max-w-[280px]">
                         <div className="flex justify-between items-center mb-1">
-                          <span className={`text-xs font-black italic ${
-                            model.remainingPercent < 20 ? 'text-destructive' : 
-                            model.remainingPercent < 50 ? 'text-amber-500' : 'text-primary'
-                          }`}>
+                          <span
+                            className={`text-xs font-black italic ${
+                              model.remainingPercent < 20
+                                ? "text-destructive"
+                                : model.remainingPercent < 50
+                                  ? "text-amber-500"
+                                  : "text-primary"
+                            }`}
+                          >
                             {model.remainingPercent}%
                           </span>
                         </div>
                         <div className="h-2 bg-secondary/50 rounded-full overflow-hidden w-full">
-                          <div 
+                          <div
                             className={`h-full transition-all duration-1000 ease-out ${
-                              model.remainingPercent < 20 ? 'bg-destructive shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 
-                              model.remainingPercent < 50 ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]' : 'bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]'
+                              model.remainingPercent < 20
+                                ? "bg-destructive shadow-[0_0_8px_rgba(239,68,68,0.4)]"
+                                : model.remainingPercent < 50
+                                  ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]"
+                                  : "bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]"
                             }`}
                             style={{ width: `${model.remainingPercent}%` }}
                           />
@@ -283,8 +290,18 @@ export const Dashboard: React.FC = () => {
                       {model.resetTime ? (
                         <div className="space-y-1">
                           <div className="flex items-center text-sm font-medium text-foreground">
-                            <svg className="w-3.5 h-3.5 mr-2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <svg
+                              className="w-3.5 h-3.5 mr-2 text-muted-foreground"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
                             </svg>
                             {new Date(model.resetTime).toLocaleDateString()}
                           </div>
@@ -293,7 +310,9 @@ export const Dashboard: React.FC = () => {
                           </p>
                         </div>
                       ) : (
-                        <span className="text-xs font-medium text-muted-foreground italic">No Reset Info</span>
+                        <span className="text-xs font-medium text-muted-foreground italic">
+                          No Reset Info
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -301,24 +320,40 @@ export const Dashboard: React.FC = () => {
               </tbody>
             </table>
           </div>
-          
+
           {modelsLoading && models.length === 0 && (
             <div className="py-20 flex flex-col items-center justify-center space-y-4">
               <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-              <p className="text-sm text-muted-foreground font-medium italic">Retrieving real-time quota data...</p>
+              <p className="text-sm text-muted-foreground font-medium italic">
+                Retrieving real-time quota data...
+              </p>
             </div>
           )}
 
           {!modelsLoading && models.length === 0 && (
             <div className="py-20 flex flex-col items-center justify-center space-y-4">
               <div className="p-4 bg-muted rounded-full">
-                <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                <svg
+                  className="w-8 h-8 text-muted-foreground"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                  />
                 </svg>
               </div>
               <div className="text-center">
-                <p className="text-foreground font-semibold">No Quota Data Found</p>
-                <p className="text-sm text-muted-foreground">Try refreshing or check your connection.</p>
+                <p className="text-foreground font-semibold">
+                  No Quota Data Found
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Try refreshing or check your connection.
+                </p>
               </div>
             </div>
           )}

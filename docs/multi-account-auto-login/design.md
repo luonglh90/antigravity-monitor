@@ -18,25 +18,31 @@ The multi-account auto-login feature is implemented using a layered architecture
 **Purpose**: Securely store and retrieve user credentials using VS Code's SecureStorage API.
 
 **Interface**:
+
 ```typescript
 interface CredentialStore {
-  saveCredentials(email: string, token: string, metadata?: object): Promise<void>
-  loadCredentials(email: string): Promise<Credentials | null>
-  getAllCredentials(): Promise<Credentials[]>
-  deleteCredentials(email: string): Promise<void>
+  saveCredentials(
+    email: string,
+    token: string,
+    metadata?: object,
+  ): Promise<void>;
+  loadCredentials(email: string): Promise<Credentials | null>;
+  getAllCredentials(): Promise<Credentials[]>;
+  deleteCredentials(email: string): Promise<void>;
 }
 
 interface Credentials {
-  email: string
-  token: string
+  email: string;
+  token: string;
   metadata?: {
-    planType?: string
-    lastLoginTime?: number
-  }
+    planType?: string;
+    lastLoginTime?: number;
+  };
 }
 ```
 
 **Implementation Details**:
+
 - Uses VS Code's `context.secrets` for encryption
 - Stores credentials with email as the key
 - Implements fallback to in-memory storage on SecureStorage failure
@@ -49,6 +55,7 @@ interface Credentials {
 **Purpose**: Single service for fetching all user state (Credentials, AI Model Quotas, Prompt/Flow Credits, and Plan Metadata) directly from the running Antigravity Language Server.
 
 **Key Methods**:
+
 ```typescript
 // For auto-login
 fetchCredentialsFromLanguageServer(): Promise<Credentials | null>
@@ -58,6 +65,7 @@ fetchQuotaFromLanguageServer(email: string): Promise<AccountQuota | null>
 ```
 
 **Implementation Details**:
+
 - Polling-based architecture (every 60 seconds)
 - Extracts high-fidelity usage data from `GetUserStatus` and `planStatus`
 - Calculates relative reset timers and identifies "fully used" models
@@ -70,27 +78,29 @@ fetchQuotaFromLanguageServer(email: string): Promise<AccountQuota | null>
 **Purpose**: Manage account lifecycle including CRUD operations and active account tracking.
 
 **Interface**:
+
 ```typescript
 interface AccountManager {
-  addAccount(email: string, token: string, metadata?: object): Promise<void>
-  removeAccount(email: string): Promise<void>
-  getAccount(email: string): Account | null
-  getAllAccounts(): Account[]
-  setActiveAccount(email: string): Promise<void>
-  getActiveAccount(): Account | null
+  addAccount(email: string, token: string, metadata?: object): Promise<void>;
+  removeAccount(email: string): Promise<void>;
+  getAccount(email: string): Account | null;
+  getAllAccounts(): Account[];
+  setActiveAccount(email: string): Promise<void>;
+  getActiveAccount(): Account | null;
 }
 
 interface Account {
-  email: string
-  token: string
+  email: string;
+  token: string;
   metadata?: {
-    planType?: string
-    lastLoginTime?: number
-  }
+    planType?: string;
+    lastLoginTime?: number;
+  };
 }
 ```
 
 **Implementation Details**:
+
 - Integrates with CredentialStore for persistence
 - Detects and prevents duplicate account additions
 - Updates last login time on account switch
@@ -103,17 +113,38 @@ interface Account {
 **Purpose**: Fetch credentials from the local language server for auto-login.
 
 **New Method**:
+
 ```typescript
 fetchCredentialsFromLanguageServer(): Promise<Credentials | null>
 ```
 
 **Implementation Details**:
+
 - Calls GetUserStatus on the language server
 - Extracts email from response
 - Returns credentials object with email and token
 - Returns null if language server is unavailable
 - Logs all attempts for debugging
 
+### 5. QuotaService Enhancement
+
+**File**: `backend/quotaService.ts`
+
+**Purpose**: Fetch and cache quota data per account.
+
+**New Method**:
+
+```typescript
+fetchQuotaForAccount(email: string): Promise<object>
+```
+
+**Implementation Details**:
+
+- Accepts email parameter for per-account fetching
+- Integrates with QuotaCache for caching
+- Implements cache-first strategy with background refresh
+- Handles errors with descriptive messages
+- Supports cache invalidation on manual refresh
 
 ### 6. Extension Lifecycle Integration
 
@@ -122,6 +153,7 @@ fetchCredentialsFromLanguageServer(): Promise<Credentials | null>
 **Purpose**: Integrate auto-login flow with extension activation.
 
 **Implementation Details**:
+
 - On activation, attempt auto-login using language server credentials
 - Implement retry logic with exponential backoff (up to 3 retries)
 - Display loading indicator during auto-login
@@ -136,12 +168,14 @@ fetchCredentialsFromLanguageServer(): Promise<Credentials | null>
 **Purpose**: Handle account operation messages from frontend.
 
 **Message Types**:
+
 - `addAccount`: Add a new account
 - `switchAccount`: Switch to a different account
 - `removeAccount`: Remove an account
 - `fetchQuotas`: Fetch quota data for active account
 
 **Implementation Details**:
+
 - Validate account operations
 - Update active account and trigger quota fetch on switch
 - Clear session data when switching accounts
@@ -156,33 +190,61 @@ fetchCredentialsFromLanguageServer(): Promise<Credentials | null>
 **Purpose**: Global state management for account data.
 
 **Interface**:
+
 ```typescript
 interface AccountContextType {
-  currentAccount: Account | null
-  accounts: Account[]
-  loading: boolean
-  error: string | null
-  switchAccount(email: string): Promise<void>
-  addAccount(email: string, token: string): Promise<void>
-  removeAccount(email: string): Promise<void>
+  currentAccount: Account | null;
+  accounts: Account[];
+  loading: boolean;
+  error: string | null;
+  switchAccount(email: string): Promise<void>;
+  addAccount(email: string, token: string): Promise<void>;
+  removeAccount(email: string): Promise<void>;
 }
 
 interface Account {
-  email: string
-  token: string
+  email: string;
+  token: string;
   metadata?: {
-    planType?: string
-    lastLoginTime?: number
-  }
+    planType?: string;
+    lastLoginTime?: number;
+  };
 }
 ```
 
 **Implementation Details**:
+
 - Uses React Context API for global state
 - Provides `useAccount()` hook for accessing state
 - Manages account switching and list updates
 - Handles loading and error states
 
+### 2. useQuota Hook
+
+**File**: `frontend/src/hooks/useQuota.ts`
+
+**Purpose**: Manage quota data fetching and caching.
+
+**Interface**:
+
+```typescript
+interface UseQuotaReturn {
+  quota: object | null;
+  loading: boolean;
+  error: string | null;
+  refresh(): Promise<void>;
+}
+
+function useQuota(email: string): UseQuotaReturn;
+```
+
+**Implementation Details**:
+
+- Fetches quota data for specified account
+- Supports per-account quota caching
+- Implements manual refresh functionality
+- Handles background refresh with loading indicator
+- Manages loading and error states
 
 ### 3. Message Handlers
 
@@ -191,6 +253,7 @@ interface Account {
 **Purpose**: Handle messages from backend.
 
 **Message Types**:
+
 - `updateAccount`: Update current account
 - `quotaData`: Quota data update
 - `quotaError`: Quota fetch error
@@ -200,6 +263,7 @@ interface Account {
 - `accountRemoved`: Account removed
 
 **Implementation Details**:
+
 - Dispatches actions to update AccountContext
 - Updates quota data in useQuota hook
 - Handles error messages
@@ -212,13 +276,15 @@ interface Account {
 **Purpose**: Support both login and add-account modes.
 
 **Props**:
+
 ```typescript
 interface LoginProps {
-  mode?: 'login' | 'add-account'
+  mode?: "login" | "add-account";
 }
 ```
 
 **Implementation Details**:
+
 - Accepts mode prop (default: 'login')
 - Changes button text based on mode
 - Displays "Cancel" button in add-account mode
@@ -232,6 +298,7 @@ interface LoginProps {
 **Purpose**: Display and manage account switching.
 
 **Features**:
+
 - Displays current account email prominently
 - Dropdown menu showing all available accounts
 - Email display for each account
@@ -242,6 +309,7 @@ interface LoginProps {
 - Single-account mode without dropdown
 
 **Implementation Details**:
+
 - Uses AccountContext for state
 - Handles account selection and switching
 - Manages dropdown visibility
@@ -254,6 +322,7 @@ interface LoginProps {
 **Purpose**: Integrate AccountSwitcher and account management.
 
 **Changes**:
+
 - Include AccountSwitcher component
 - Position AccountSwitcher prominently
 - Add "Add Account" button next to AccountSwitcher
@@ -261,6 +330,7 @@ interface LoginProps {
 - Ensure UI doesn't interfere with main content
 
 **Implementation Details**:
+
 - Uses AccountContext for current account
 - Handles "Add Account" button click
 - Displays plan type in header
@@ -272,6 +342,7 @@ interface LoginProps {
 **Purpose**: Manage multi-account state and auto-login flow.
 
 **Changes**:
+
 - Use AccountContext for account state
 - Initialize account context on mount
 - Handle auto-login flow with loading indicator
@@ -282,6 +353,7 @@ interface LoginProps {
 - Implement background quota refresh
 
 **Implementation Details**:
+
 - Initializes AccountContext on mount
 - Manages loading state during auto-login
 - Handles account switching
@@ -294,6 +366,7 @@ interface LoginProps {
 **Purpose**: Wrap application with AccountProvider.
 
 **Changes**:
+
 - Wrap app with AccountProvider
 - Ensure AccountContext is available to all components
 - Initialize account state on app startup
