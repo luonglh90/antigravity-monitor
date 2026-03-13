@@ -4,10 +4,10 @@
 
 The multi-account auto-login feature is implemented using a layered architecture:
 
-1. **Backend Services Layer**: Credential storage, quota caching, and account management
-2. **Backend Integration Layer**: Extension lifecycle hooks and message handlers
-3. **Frontend State Management Layer**: React Context for global account state
-4. **Frontend Component Layer**: UI components for account management and authentication
+1. **Backend Layer**: Secure storage (`CredentialStore`) and Unified Local Service (`LocalLanguageServerClient`)
+2. **Integration Layer**: Extension lifecycle hooks and auto-polling logic
+3. **Frontend State Layer**: React Context for synchronized account and usage state
+4. **Frontend UI Layer**: Dashboard with List View and real-time Credit tracking
 
 ## Backend Architecture
 
@@ -42,27 +42,26 @@ interface Credentials {
 - Implements fallback to in-memory storage on SecureStorage failure
 - Handles storage errors gracefully with logging
 
-### 2. QuotaCache Service
+### 2. Unified Local Language Server Client
 
-**File**: `backend/quotaCache.ts`
+**File**: `backend/localLanguageServerClient.ts`
 
-**Purpose**: Cache quota data per account with TTL-based expiration.
+**Purpose**: Single service for fetching all user state (Credentials, AI Model Quotas, Prompt/Flow Credits, and Plan Metadata) directly from the running Antigravity Language Server.
 
-**Interface**:
+**Key Methods**:
 ```typescript
-interface QuotaCache {
-  setQuota(email: string, quotaData: object, ttlMs: number): void
-  getQuota(email: string): object | null
-  invalidateQuota(email: string): void
-  clearAllQuotas(): void
-}
+// For auto-login
+fetchCredentialsFromLanguageServer(): Promise<Credentials | null>
+
+// For usage monitoring
+fetchQuotaFromLanguageServer(email: string): Promise<AccountQuota | null>
 ```
 
 **Implementation Details**:
-- Stores quota data with email as the key
-- Validates TTL on retrieval (default 5 minutes)
-- Supports immediate invalidation for manual refresh
-- Clears all entries on session cleanup
+- Polling-based architecture (every 60 seconds)
+- Extracts high-fidelity usage data from `GetUserStatus` and `planStatus`
+- Calculates relative reset timers and identifies "fully used" models
+- No external internet dependency for usage stats (Local-First)
 
 ### 3. AccountManager Service
 
@@ -115,23 +114,6 @@ fetchCredentialsFromLanguageServer(): Promise<Credentials | null>
 - Returns null if language server is unavailable
 - Logs all attempts for debugging
 
-### 5. QuotaService Enhancement
-
-**File**: `backend/quotaService.ts`
-
-**Purpose**: Fetch and cache quota data per account.
-
-**New Method**:
-```typescript
-fetchQuotaForAccount(email: string): Promise<object>
-```
-
-**Implementation Details**:
-- Accepts email parameter for per-account fetching
-- Integrates with QuotaCache for caching
-- Implements cache-first strategy with background refresh
-- Handles errors with descriptive messages
-- Supports cache invalidation on manual refresh
 
 ### 6. Extension Lifecycle Integration
 
@@ -201,30 +183,6 @@ interface Account {
 - Manages account switching and list updates
 - Handles loading and error states
 
-### 2. useQuota Hook
-
-**File**: `frontend/src/hooks/useQuota.ts`
-
-**Purpose**: Manage quota data fetching and caching.
-
-**Interface**:
-```typescript
-interface UseQuotaReturn {
-  quota: object | null
-  loading: boolean
-  error: string | null
-  refresh(): Promise<void>
-}
-
-function useQuota(email: string): UseQuotaReturn
-```
-
-**Implementation Details**:
-- Fetches quota data for specified account
-- Supports per-account quota caching
-- Implements manual refresh functionality
-- Handles background refresh with loading indicator
-- Manages loading and error states
 
 ### 3. Message Handlers
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The multi-account auto-login feature enables users to authenticate automatically using local language server credentials and manage multiple Antigravity accounts within the VS Code extension. This feature improves user experience by reducing manual authentication steps and allowing seamless switching between accounts.
+The multi-account auto-login feature enables users to authenticate automatically using local language server credentials and manage multiple Antigravity accounts. This feature prioritizes a **local-first** architecture where all usage data (quotas, credits, plans) is sourced directly from the user's running IDE environment for maximum reliability and performance.
 
 ## Functional Requirements
 
@@ -88,19 +88,19 @@ The multi-account auto-login feature enables users to authenticate automatically
 
 6.6 The component shall send the appropriate command to the extension based on the mode.
 
-### 7. Quota Management
+### 7. Quota and Credits Management
 
-7.1 The system shall fetch quota data for the currently active account.
+7.1 The system shall fetch quota and credit data for the currently active account directly from the local language server.
 
-7.2 Quota data shall be displayed in the Dashboard component.
+7.2 Usage stats shall include AI Model Quotas, Available Prompt Credits, and Available Flow Credits.
 
-7.3 Quota data shall be updated when switching accounts.
+7.3 The Dashboard shall display an "Upgrade" option if a subscription upgrade URI is provided by the language server.
 
-7.4 Quota fetch errors shall be handled gracefully with user-friendly error messages.
+7.4 Quota fetch errors shall be handled gracefully with user-friendly error messages and automatic retry.
 
-7.5 The system shall support per-account quota caching with TTL.
+7.5 The system shall use the local language server as the single source of truth, removing external API dependencies for usage stats.
 
-7.6 Background quota refresh shall occur while displaying cached data to the user.
+7.6 The UI shall provide a list view of AI Models for high information density.
 
 ### 8. Account Removal
 
@@ -184,19 +184,17 @@ The multi-account auto-login feature enables users to authenticate automatically
 
 14.1 When only one account is available, the AccountSwitcher shall display without a dropdown menu.
 
-### 15. Quota Caching Strategy
+### 15. Quota Display Strategy
 
-15.1 Quota data shall be cached with a configurable TTL (default 5 minutes).
+15.1 AI Model Quotas shall be displayed in a sleek **List View** for scannability.
 
-15.2 Cached quota data shall be displayed immediately while fresh data is fetched in the background.
+15.2 Reset dates shall be accompanied by a human-readable **relative timer** (e.g., "reset in 10d 5h 20m").
 
-15.3 Cache entries shall expire after the TTL period.
+15.3 Usage percentages shall correctly reflect the "fully used" state (0%) when a reset time is pending.
 
-15.4 Expired cache entries shall not be returned to the user.
+15.4 Usage data shall be refreshed automatically every 60 seconds.
 
-15.5 Manual refresh shall invalidate the cache and fetch fresh data.
-
-15.6 The default TTL for quota cache shall be 5 minutes.
+15.5 Manual refresh shall trigger an immediate poll of the local language server.
 
 ## Non-Functional Requirements
 

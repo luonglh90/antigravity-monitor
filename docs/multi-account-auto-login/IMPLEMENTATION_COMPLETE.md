@@ -6,28 +6,21 @@ The multi-account auto-login feature has been successfully implemented with comp
 
 ## Implementation Status
 
-### ✅ Backend Services (Tasks 1-9)
-All backend services have been implemented and are production-ready:
+### ✅ Backend Services
+All backend services have been refined for a **Local-First** architecture:
 
-1. **CredentialStore** - Secure credential storage with VS Code SecureStorage
-2. **QuotaCache** - Per-account quota caching with TTL management
-3. **AccountManager** - Account lifecycle management with isolation
-4. **QuotaService** - Per-account quota fetching and caching
-5. **LocalLanguageServerClient** - Credential fetching from language server
-6. **Extension Integration** - Auto-login flow with retry logic
-7. **Message Handlers** - Account operation message handling
+1. **CredentialStore** - Secure credential storage using VS Code SecureStorage.
+2. **LocalLanguageServerClient** - Unified service for fetching credentials, model quotas, and credit information directly from the local language server.
+3. **AccountManager** - Account lifecycle management with automated discovery from the language server.
+4. **Extension Integration** - Auto-login flow with exponential backoff and real-time usage polling.
 
-### ✅ Frontend Components (Tasks 10-17)
-All frontend components have been implemented:
+### ✅ Frontend Components
+The frontend has been enhanced for a premium monitoring experience:
 
-1. **AccountContext** - Global state management for accounts
-2. **useQuota Hook** - Quota data management hook
-3. **Message Handlers** - Backend communication
-4. **Login Component** - Support for login and add-account modes
-5. **AccountSwitcher** - Account switching UI
-6. **Header Component** - Integration with AccountSwitcher
-7. **Dashboard Component** - Multi-account state management
-8. **Application Layout** - AccountProvider wrapping
+1. **AccountContext** - Unified state for accounts, quotas, and credits.
+2. **Dashboard Component** - Features a sleek **List View** for AI Model Quotas and a dedicated **Credits Section**.
+3. **Header Component** - Includes a dynamic account switcher and a context-aware **Upgrade Button**.
+4. **Relative Timers** - Precise countdowns for quota resets (e.g., "reset in 10d 5h").
 
 ### ✅ Testing Implementation (Tasks 18-29)
 
