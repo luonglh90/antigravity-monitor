@@ -115,7 +115,7 @@ export const Dashboard: React.FC = () => {
 
     const updateModels = (models: any[]) => {
       const sortedModels = [...models].sort((a, b) =>
-        a.modelName.localeCompare(b.modelName),
+        b.modelName.localeCompare(a.modelName),
       );
       setModels(sortedModels);
     };
@@ -161,7 +161,7 @@ export const Dashboard: React.FC = () => {
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
-    let result = "reset in ";
+    let result = "";
     if (days > 0) result += `${days}d `;
     if (hours > 0) result += `${hours}h `;
     result += `${minutes}m`;
@@ -191,7 +191,7 @@ export const Dashboard: React.FC = () => {
       <Header />
 
       <main className="flex-1 p-6 space-y-8 overflow-y-auto">
-        <div className="flex justify-between items-end border-border/50 pt-8 mt-4">
+        <div className="flex justify-between items-end pt-8 mt-4">
           <div>
             <h4 className="text-2xl font-bold tracking-tight">
               AI Models Quota
