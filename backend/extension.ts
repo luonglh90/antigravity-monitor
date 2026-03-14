@@ -126,16 +126,7 @@ class AntigravityWebviewViewProvider implements vscode.WebviewViewProvider {
           });
         }
       },
-      undefined,
     );
-  }
-
-  public showView() {
-    if (this._view) {
-      this._view.show?.(true);
-    } else {
-      vscode.commands.executeCommand("antigravity-monitor-sidebar.focus");
-    }
   }
 }
 
@@ -153,15 +144,6 @@ export function activate(context: vscode.ExtensionContext) {
       provider,
     ),
   );
-
-  let disposable = vscode.commands.registerCommand(
-    "antigravity-monitor.open",
-    () => {
-      provider.showView();
-    },
-  );
-
-  context.subscriptions.push(disposable);
 }
 
 export function deactivate() {}

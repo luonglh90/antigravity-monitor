@@ -8,7 +8,7 @@
     "type": "git",
     "url": "https://github.com/luonglh90/antigravity-monitor.git"
   },
-  "version": "0.0.3",
+  "version": "0.0.4",
   "icon": "resources/icon.png",
   "engines": {
     "vscode": "^1.85.0"
@@ -18,13 +18,7 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "antigravity-monitor.open",
-        "title": "Antigravity Monitor: Open Dashboard",
-        "category": "Antigravity"
-      }
-    ],
+
     "viewsContainers": {
       "activitybar": [
         {

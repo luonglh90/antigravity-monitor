@@ -22,6 +22,8 @@ Monitor Antigravity AI agent status and model quotas directly inside VS Code.
 
 Antigravity Monitor is a VS Code extension that provides a real-time dashboard for tracking your Gemini and Claude model usage. It helps you stay within your quota limits by showing remaining usage and reset times.
 
+![alt text](image.png)
+
 ## Features
 
 - **Real-time Quotas**: View remaining quota for Claude and Gemini model families.
@@ -33,9 +35,7 @@ Antigravity Monitor is a VS Code extension that provides a real-time dashboard f
 
 ## Usage
 
-1. **Activity Bar**: Click on the **Antigravity Monitor** icon (the stylized 'A' with a heartbeat) in the VS Code Activity Bar on the left.
-2. **Side Panel**: The dashboard will open instantly in the side panel, showing your current local session status and model quotas.
-3. **Command Palette**: You can also use `Antigravity Monitor: Open Dashboard` from the Command Palette (`Cmd+Shift+P`) to focus the monitor.
+3. **Auto-Discovery**: The extension automatically detects your local session; no manual login is required.
 
 ## Development Setup
 
