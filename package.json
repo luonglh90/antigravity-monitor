@@ -1,5 +1,5 @@
 {
-  "name": "antigravity-monitor",
+  "name": "@notalab/antigravity-monitor",
   "displayName": "Antigravity Monitor",
   "description": "Monitor Antigravity AI agent status directly inside VS Code",
   "version": "0.0.1",
@@ -8,6 +8,13 @@
   },
   "categories": [
     "Other"
+  ],
+  "files": [
+    "out",
+    "frontend/dist",
+    "package.json",
+    "README.md",
+    "LICENSE"
   ],
   "main": "./out/extension.js",
   "contributes": {
