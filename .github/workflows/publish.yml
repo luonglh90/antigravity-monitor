@@ -1,4 +1,4 @@
-name: Publish to NPM
+name: Publish Extension
 
 on:
   push:
@@ -31,9 +31,6 @@ jobs:
 
       - name: Build extension
         run: npm run vsce:package
-
-      # - name: Publish to VS Code Marketplace
-      #   run: npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }}
 
       - name: Publish to Open VSX
         run: npx ovsx publish -p ${{ secrets.OPEN_VSX_TOKEN }}
