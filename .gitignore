@@ -137,3 +137,12 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+
+out/
+dist/
+webview-ui/node_modules/
+webview-ui/out/
+webview-ui/.next/
+.vscode-test/
+.DS_Store
