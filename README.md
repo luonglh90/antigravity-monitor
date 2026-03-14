@@ -7,23 +7,15 @@ Antigravity Monitor is a VS Code extension that provides a real-time dashboard f
 ## Features
 
 - **Real-time Quotas**: View remaining quota for Claude and Gemini model families.
-- **Active Agents**: Track running AI agents and their current load.
-- **Integrated Dashboard**: Access all monitoring data through a beautiful, modern UI inside VS Code.
-- **Automatic Auth**: Seamlessly integrates with VS Code's authentication providers (Google, Antigravity).
+- **Side Panel Integration**: Access your dashboard directly from the VS Code Activity Bar for a seamless, always-on experience.
+- **Local Session Monitoring**: Automatically detects your active AI assistant session (e.g., Codeium/Antigravity) without requiring manual login.
+- **Heartbeat Status**: Keep track of the health and availability of your local AI assistant.
 
-## Quick Start
+## Usage
 
-### Installation
-
-1. Open VS Code.
-2. Search for "Antigravity Monitor" in the Extensions view.
-3. Click **Install**.
-
-### Usage
-
-1. Open the Command Palette (`Cmd+Shift+P` on macOS, `Ctrl+Shift+P` on Windows/Linux).
-2. Type `Antigravity Monitor: Open Dashboard` and press Enter.
-3. If prompted, sign in with your Google or Antigravity account.
+1. **Activity Bar**: Click on the **Antigravity Monitor** icon (the stylized 'A' with a heartbeat) in the VS Code Activity Bar on the left.
+2. **Side Panel**: The dashboard will open instantly in the side panel, showing your current local session status and model quotas.
+3. **Command Palette**: You can also use `Antigravity Monitor: Open Dashboard` from the Command Palette (`Cmd+Shift+P`) to focus the monitor.
 
 ## Development Setup
 

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
 import { vscode } from "../lib/vscode";
 
 export interface Account {
@@ -7,7 +7,9 @@ export interface Account {
   metadata?: {
     planType?: string;
     lastLoginTime?: number;
+    name?: string;
   };
+  name?: string;
 }
 
 export interface AIModelQuota {
@@ -25,22 +27,20 @@ export interface QuotaData {
   flowCredits?: number;
   upgradeUri?: string;
   planType?: string;
+  expirationDate?: string;
+  name?: string;
+  upgradeText?: string;
 }
 
 export interface AccountContextType {
   currentAccount: Account | null;
-  accounts: Account[];
   quota: QuotaData | null;
   loading: boolean;
   error: string | null;
   setCurrentAccount: (account: Account | null) => void;
-  setAccounts: (accounts: Account[]) => void;
   setQuota: (quota: QuotaData | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  switchAccount: (email: string) => void;
-  addAccount: () => void;
-  removeAccount: (email: string) => void;
   refreshQuotas: () => void;
 }
 
@@ -50,47 +50,31 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [currentAccount, setCurrentAccount] = useState<Account | null>(null);
-  const [accounts, setAccounts] = useState<Account[]>([]);
   const [quota, setQuota] = useState<QuotaData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const switchAccount = (email: string) => {
-    setLoading(true);
-    vscode.postMessage({ command: "switchAccount", email });
-  };
-
-  const addAccount = () => {
-    vscode.postMessage({ command: "addAccount" });
-  };
-
-  const removeAccount = (email: string) => {
-    vscode.postMessage({ command: "removeAccount", email });
-  };
 
   const refreshQuotas = React.useCallback(() => {
     vscode.postMessage({ command: "fetchQuotas" });
   }, []);
 
+  const value = React.useMemo(
+    () => ({
+      currentAccount,
+      quota,
+      loading,
+      error,
+      setCurrentAccount,
+      setQuota,
+      setLoading,
+      setError,
+      refreshQuotas,
+    }),
+    [currentAccount, quota, loading, error, refreshQuotas],
+  );
+
   return (
-    <AccountContext.Provider
-      value={{
-        currentAccount,
-        accounts,
-        quota,
-        loading,
-        error,
-        setCurrentAccount,
-        setAccounts,
-        setQuota,
-        setLoading,
-        setError,
-        switchAccount,
-        addAccount,
-        removeAccount,
-        refreshQuotas,
-      }}
-    >
+    <AccountContext.Provider value={value}>
       {children}
     </AccountContext.Provider>
   );
