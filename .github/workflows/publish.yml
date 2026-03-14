@@ -3,20 +3,22 @@ name: Publish to NPM
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Install dependencies
         run: npm install
@@ -29,7 +31,8 @@ jobs:
       - name: Build extension
         run: npm run package
 
-      - name: Publish to NPM
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # - name: Publish to VS Code Marketplace
+      #   run: npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }}
+
+      - name: Publish to Open VSX
+        run: npx ovsx publish -p ${{ secrets.OPEN_VSX_TOKEN }}

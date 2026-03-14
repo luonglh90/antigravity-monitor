@@ -2,8 +2,18 @@ import * as https from "https";
 import * as http from "http";
 import { exec } from "child_process";
 import { promisify } from "util";
-import { Credentials } from "./credentialStore";
 import { ModelQuotaInfo, AccountQuota } from "./quotaService";
+
+export interface Credentials {
+  email: string;
+  token: string;
+  metadata?: {
+    planType?: string;
+    lastLoginTime?: number;
+    name?: string;
+  };
+  name?: string;
+}
 
 const execAsync = promisify(exec);
 
@@ -367,6 +377,10 @@ export async function fetchCredentialsFromLanguageServer(): Promise<Credentials 
       (userStatus as any)?.userStatus?.auth_token ||
       (userStatus as any)?.userStatus?.accessToken;
 
+    // Extract name and plan info
+    const planType = (userStatus as any)?.planStatus?.planInfo?.planName || "Free";
+    const name = (userStatus as any)?.name || (userStatus as any)?.user_name || (userStatus as any)?.displayName;
+
     if (!token) {
       console.warn(
         "[LocalLS] GetUserStatus response does not contain authentication token. Available fields:",
@@ -379,23 +393,27 @@ export async function fetchCredentialsFromLanguageServer(): Promise<Credentials 
       const credentials: Credentials = {
         email,
         token: placeholderToken,
+        name,
+        metadata: {
+          planType,
+          name,
+        }
       };
 
       console.log(
-        `[LocalLS] Successfully fetched credentials for email: ${email} (with placeholder token)`,
+        `[LocalLS] Successfully fetched credentials with placeholder for email: ${email}, name: ${name}`,
       );
       return credentials;
     }
-
-    // Extract plan name
-    const planType = (userStatus as any)?.planStatus?.planInfo?.planName || "Free";
 
     const credentials: Credentials = {
       email,
       token,
       metadata: {
         planType,
+        name,
       },
+      name,
     };
 
     console.log(
@@ -428,11 +446,13 @@ export async function fetchQuotaFromLanguageServer(
       return null;
     }
     const userStatus = (response as any).userStatus;
-    console.log(
-      "[LocalLS] GetUserStatus response:",
-      userStatus.email,
-      userStatus.userTier,
-    );
+    console.log("[LocalLS] GetUserStatus response keys:", Object.keys(userStatus || {}));
+    if (userStatus?.planStatus) {
+      console.log("[LocalLS] planStatus keys:", Object.keys(userStatus.planStatus));
+      if (userStatus.planStatus.planInfo) {
+        console.log("[LocalLS] planInfo keys:", Object.keys(userStatus.planStatus.planInfo));
+      }
+    }
     const cascadeConfigs =
       userStatus?.cascadeModelConfigData?.clientModelConfigs || [];
     const planStatus = userStatus?.planStatus;
@@ -477,8 +497,33 @@ export async function fetchQuotaFromLanguageServer(
       promptCredits: planStatus?.availablePromptCredits,
       flowCredits: planStatus?.availableFlowCredits,
       upgradeUri: userTier?.upgradeSubscriptionUri,
+      upgradeText: userTier?.upgradeSubscriptionText,
       planType: planStatus?.planInfo?.planName || "Free",
+      name: (userStatus as any)?.name || (userStatus as any)?.user_name || (userStatus as any)?.displayName,
+      expirationDate: (() => {
+        // Broad search for expiration time based on user feedback/discovery
+        const time = 
+          planStatus?.planInfo?.expirationTime || 
+          planStatus?.planInfo?.endsAtMS ||
+          planStatus?.expirationTime ||
+          planStatus?.endsAtMS ||
+          userTier?.expirationTime ||
+          userTier?.endsAtMS ||
+          userStatus?.expirationTime ||
+          userStatus?.endsAtMS;
+          
+        if (!time) return undefined;
+        try {
+          // If numeric ISO string, convert to number. If it's already a number, Date accepts it.
+          const date = new Date(typeof time === 'string' && /^\d+$/.test(time) ? parseInt(time, 10) : time);
+          return isNaN(date.getTime()) ? undefined : date.toLocaleDateString();
+        } catch {
+          return undefined;
+        }
+      })(),
     };
+
+    console.log("[LocalLS] Parsed Expiration Date:", result.expirationDate);
 
     // Calculate aggregate percentages
     if (result.claudeModels.length > 0) {

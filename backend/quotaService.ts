@@ -37,6 +37,9 @@ export interface AccountQuota {
   flowCredits?: number;
   upgradeUri?: string;
   planType?: string;
+  expirationDate?: string;
+  name?: string;
+  upgradeText?: string;
 }
 
 interface FetchModelsResponse {
