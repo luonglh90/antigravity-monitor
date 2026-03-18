@@ -342,10 +342,10 @@ export async function fetchCredentialsFromLanguageServer(): Promise<Credentials 
     }
     const userStatus = (response as any).userStatus;
 
-    console.log(
-      "[LocalLS] GetUserStatus response:",
-      JSON.stringify(userStatus, null, 2),
-    );
+    // console.log(
+    //   "[LocalLS] GetUserStatus response:",
+    //   JSON.stringify(userStatus, null, 2),
+    // );
 
     // Extract email from GetUserStatus response
     // The response structure may vary, so we check common field names
@@ -522,8 +522,10 @@ export async function fetchQuotaFromLanguageServer(
         const credit = userTier?.availableCredits?.find(
           (c: any) => c.creditType === "GOOGLE_ONE_AI",
         );
-        if (credit?.creditAmount !== undefined) return Number(credit.creditAmount);
-        if (planStatus?.availableAiCredits !== undefined) return Number(planStatus.availableAiCredits);
+        if (credit?.creditAmount !== undefined)
+          return Number(credit.creditAmount);
+        if (planStatus?.availableAiCredits !== undefined)
+          return Number(planStatus.availableAiCredits);
         return undefined;
       })(),
       enableAiCreditOverages: planStatus?.enableAiCreditOverages,

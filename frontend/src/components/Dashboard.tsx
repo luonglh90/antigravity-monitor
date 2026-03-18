@@ -49,21 +49,28 @@ export const Dashboard: React.FC = () => {
           if (message.data) {
             setQuota(message.data);
             if (message.data.models) {
-              const recommendedOrder = message.data.recommendedModelLabels || [];
-              
-              const sortedModels = [...message.data.models].sort((a: any, b: any) => {
-                const nameA = a.displayName || a.modelName;
-                const nameB = b.displayName || b.modelName;
-                
-                const indexA = recommendedOrder.findIndex((label: string) => nameA.includes(label));
-                const indexB = recommendedOrder.findIndex((label: string) => nameB.includes(label));
-                
-                if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-                if (indexA !== -1) return -1;
-                if (indexB !== -1) return 1;
-                
-                return nameA.localeCompare(nameB);
-              });
+              const recommendedOrder =
+                message.data.recommendedModelLabels || [];
+
+              const sortedModels = [...message.data.models].sort(
+                (a: any, b: any) => {
+                  const nameA = a.displayName || a.modelName;
+                  const nameB = b.displayName || b.modelName;
+
+                  const indexA = recommendedOrder.findIndex((label: string) =>
+                    nameA.includes(label),
+                  );
+                  const indexB = recommendedOrder.findIndex((label: string) =>
+                    nameB.includes(label),
+                  );
+
+                  if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                  if (indexA !== -1) return -1;
+                  if (indexB !== -1) return 1;
+
+                  return nameA.localeCompare(nameB);
+                },
+              );
               setModels(sortedModels);
             }
             // Update planType in currentAccount metadata if it changed
@@ -204,7 +211,7 @@ export const Dashboard: React.FC = () => {
             </h2>
           </div>
 
-          <div className="bg-card border border-border/50 rounded-xl overflow-hidden shadow-sm">
+          <div className="bg-card border border-border/50 rounded-xl shadow-sm">
             <div className="p-3 flex items-center justify-between gap-3">
               <div className="flex items-center space-x-2 min-w-0">
                 <span className="text-sm font-bold text-foreground truncate">
@@ -228,15 +235,16 @@ export const Dashboard: React.FC = () => {
                   </div>
                   {/* Custom Tooltip */}
                   <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 p-2 bg-background/95 backdrop-blur-md border border-border rounded-lg shadow-xl text-[10px] leading-relaxed text-foreground opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[100]">
-                    When toggled on, Antigravity will use your AI credits to fulfill model requests 
-                    once you're out of model quota. Antigravity will always use your model quota 
-                    first before using AI credits.
+                    When toggled on, Antigravity will use your AI credits to
+                    fulfill model requests once you're out of model quota.
+                    Antigravity will always use your model quota first before
+                    using AI credits.
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-8 border-transparent border-b-border/95" />
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2 shrink-0">
+              {/* <div className="flex items-center space-x-2 shrink-0">
                 <button
                   onClick={() => {
                     const newValue = !quota?.enableAiCreditOverages;
@@ -258,7 +266,7 @@ export const Dashboard: React.FC = () => {
                     }`}
                   />
                 </button>
-              </div>
+              </div> */}
             </div>
 
             <div className="px-3 pb-3 flex items-center space-x-3">
