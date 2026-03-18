@@ -30,6 +30,10 @@ export interface QuotaData {
   expirationDate?: string;
   name?: string;
   upgradeText?: string;
+  aiCredits?: number;
+  enableAiCreditOverages?: boolean;
+  activityUri?: string;
+  recommendedModelLabels?: string[];
 }
 
 export interface AccountContextType {

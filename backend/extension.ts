@@ -74,6 +74,11 @@ class AntigravityWebviewViewProvider implements vscode.WebviewViewProvider {
 
           const quota = await fetchQuotaFromLanguageServer(credentials.email);
           if (quota) {
+            // Check VS Code config if the LS doesn't provide it
+            if (quota.enableAiCreditOverages === undefined) {
+              const config = vscode.workspace.getConfiguration("antigravity");
+              quota.enableAiCreditOverages = config.get<boolean>("enableAiCreditOverages", false);
+            }
             webviewView.webview.postMessage({
               command: "quotaData",
               data: quota,
@@ -102,6 +107,10 @@ class AntigravityWebviewViewProvider implements vscode.WebviewViewProvider {
               const credentials = await fetchCredentialsFromLanguageServer();
               if (credentials) {
                 const quota = await fetchQuotaFromLanguageServer(credentials.email);
+                if (quota && (quota.enableAiCreditOverages === undefined || quota.enableAiCreditOverages === null)) {
+                  const config = vscode.workspace.getConfiguration("antigravity");
+                  quota.enableAiCreditOverages = config.get<boolean>("enableAiCreditOverages", false);
+                }
                 webviewView.webview.postMessage({
                   command: "quotaData",
                   data: quota || {
@@ -117,6 +126,38 @@ class AntigravityWebviewViewProvider implements vscode.WebviewViewProvider {
                 command: "quotaError",
                 error: error.message ?? String(error),
               });
+            }
+          } else if (message.command === "toggleAiCreditOverages") {
+            try {
+              console.log("[Extension] Toggling AI credit overages to:", message.value);
+              const config = vscode.workspace.getConfiguration("antigravity");
+              await config.update("enableAiCreditOverages", message.value, vscode.ConfigurationTarget.Global);
+              
+              // RE-FETCH the configuration to get the updated value!
+              const updatedConfig = vscode.workspace.getConfiguration("antigravity");
+              const updatedConfigValue = updatedConfig.get<boolean>("enableAiCreditOverages");
+              console.log("[Extension] Configuration updated. New value from config:", updatedConfigValue);
+
+              // Refresh quotas to update UI
+              const credentials = await fetchCredentialsFromLanguageServer();
+              if (credentials) {
+                const quota = await fetchQuotaFromLanguageServer(credentials.email);
+                if (quota) {
+                  // If the server doesn't provide the setting, use the newly updated local value
+                  if (quota.enableAiCreditOverages == null) {
+                    quota.enableAiCreditOverages = message.value;
+                  }
+                  
+                  console.log("[Extension] Sending updated quota data to webview for email:", credentials.email, "overages =", quota.enableAiCreditOverages);
+                  webviewView.webview.postMessage({
+                    command: "quotaData",
+                    data: quota,
+                    cached: false,
+                  });
+                }
+              }
+            } catch (error: any) {
+              console.error("[Extension] Failed to toggle overages:", error);
             }
           }
         } catch (error: any) {

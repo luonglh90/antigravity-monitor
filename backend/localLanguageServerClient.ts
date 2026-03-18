@@ -243,10 +243,14 @@ async function findConnectPort(
     try {
       await httpsJsonRequest(
         port,
-        "/exa.language_server_pb.LanguageServerService/GetUnleashData",
+        "/exa.language_server_pb.LanguageServerService/GetUserStatus",
         config.csrfToken,
         {
-          wrapper_data: {},
+          metadata: {
+            ideName: "antigravity",
+            extensionName: "antigravity",
+            locale: "en",
+          },
         },
       );
       console.log("[LocalLS] Found connect port", port);
@@ -340,8 +344,7 @@ export async function fetchCredentialsFromLanguageServer(): Promise<Credentials 
 
     console.log(
       "[LocalLS] GetUserStatus response:",
-      userStatus.email,
-      userStatus.userTier,
+      JSON.stringify(userStatus, null, 2),
     );
 
     // Extract email from GetUserStatus response
@@ -378,8 +381,12 @@ export async function fetchCredentialsFromLanguageServer(): Promise<Credentials 
       (userStatus as any)?.userStatus?.accessToken;
 
     // Extract name and plan info
-    const planType = (userStatus as any)?.planStatus?.planInfo?.planName || "Free";
-    const name = (userStatus as any)?.name || (userStatus as any)?.user_name || (userStatus as any)?.displayName;
+    const planType =
+      (userStatus as any)?.planStatus?.planInfo?.planName || "Free";
+    const name =
+      (userStatus as any)?.name ||
+      (userStatus as any)?.user_name ||
+      (userStatus as any)?.displayName;
 
     if (!token) {
       console.warn(
@@ -397,7 +404,7 @@ export async function fetchCredentialsFromLanguageServer(): Promise<Credentials 
         metadata: {
           planType,
           name,
-        }
+        },
       };
 
       console.log(
@@ -446,11 +453,20 @@ export async function fetchQuotaFromLanguageServer(
       return null;
     }
     const userStatus = (response as any).userStatus;
-    console.log("[LocalLS] GetUserStatus response keys:", Object.keys(userStatus || {}));
+    console.log(
+      "[LocalLS] GetUserStatus response keys:",
+      Object.keys(userStatus || {}),
+    );
     if (userStatus?.planStatus) {
-      console.log("[LocalLS] planStatus keys:", Object.keys(userStatus.planStatus));
+      console.log(
+        "[LocalLS] planStatus keys:",
+        Object.keys(userStatus.planStatus),
+      );
       if (userStatus.planStatus.planInfo) {
-        console.log("[LocalLS] planInfo keys:", Object.keys(userStatus.planStatus.planInfo));
+        console.log(
+          "[LocalLS] planInfo keys:",
+          Object.keys(userStatus.planStatus.planInfo),
+        );
       }
     }
     const cascadeConfigs =
@@ -475,10 +491,16 @@ export async function fetchQuotaFromLanguageServer(
       };
     });
 
+    const recommendedModelLabels =
+      userStatus?.cascadeModelConfigData?.clientModelSorts?.find(
+        (s: any) => s.name === "Recommended",
+      )?.groups?.[0]?.modelLabels || [];
+
     const result: AccountQuota = {
       email,
       lastFetched: Date.now(),
       models: parsedModels,
+      recommendedModelLabels,
       claudeModels: parsedModels.filter(
         (m) =>
           (m.displayName?.toLowerCase().includes("claude") ?? false) ||
@@ -496,14 +518,33 @@ export async function fetchQuotaFromLanguageServer(
       geminiResetTime: null,
       promptCredits: planStatus?.availablePromptCredits,
       flowCredits: planStatus?.availableFlowCredits,
+      aiCredits: (() => {
+        const credit = userTier?.availableCredits?.find(
+          (c: any) => c.creditType === "GOOGLE_ONE_AI",
+        );
+        if (credit?.creditAmount !== undefined) return Number(credit.creditAmount);
+        if (planStatus?.availableAiCredits !== undefined) return Number(planStatus.availableAiCredits);
+        return undefined;
+      })(),
+      enableAiCreditOverages: planStatus?.enableAiCreditOverages,
       upgradeUri: userTier?.upgradeSubscriptionUri,
       upgradeText: userTier?.upgradeSubscriptionText,
+      activityUri:
+        (userStatus as any)?.activityUri ||
+        (userStatus as any)?.usageUri ||
+        (userStatus as any)?.planStatus?.usageUri ||
+        (userTier as any)?.usageUri ||
+        (userStatus as any)?.billingUri ||
+        "https://antigravity.google/activity",
       planType: planStatus?.planInfo?.planName || "Free",
-      name: (userStatus as any)?.name || (userStatus as any)?.user_name || (userStatus as any)?.displayName,
+      name:
+        (userStatus as any)?.name ||
+        (userStatus as any)?.user_name ||
+        (userStatus as any)?.displayName,
       expirationDate: (() => {
         // Broad search for expiration time based on user feedback/discovery
-        const time = 
-          planStatus?.planInfo?.expirationTime || 
+        const time =
+          planStatus?.planInfo?.expirationTime ||
           planStatus?.planInfo?.endsAtMS ||
           planStatus?.expirationTime ||
           planStatus?.endsAtMS ||
@@ -511,11 +552,15 @@ export async function fetchQuotaFromLanguageServer(
           userTier?.endsAtMS ||
           userStatus?.expirationTime ||
           userStatus?.endsAtMS;
-          
+
         if (!time) return undefined;
         try {
           // If numeric ISO string, convert to number. If it's already a number, Date accepts it.
-          const date = new Date(typeof time === 'string' && /^\d+$/.test(time) ? parseInt(time, 10) : time);
+          const date = new Date(
+            typeof time === "string" && /^\d+$/.test(time)
+              ? parseInt(time, 10)
+              : time,
+          );
           return isNaN(date.getTime()) ? undefined : date.toLocaleDateString();
         } catch {
           return undefined;

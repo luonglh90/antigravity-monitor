@@ -36,6 +36,16 @@
           "name": "Quota Dashboard"
         }
       ]
+    },
+    "configuration": {
+      "title": "Antigravity",
+      "properties": {
+        "antigravity.enableAiCreditOverages": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable AI Credit Overages"
+        }
+      }
     }
   },
   "scripts": {

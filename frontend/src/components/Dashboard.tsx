@@ -49,9 +49,21 @@ export const Dashboard: React.FC = () => {
           if (message.data) {
             setQuota(message.data);
             if (message.data.models) {
-              const sortedModels = [...message.data.models].sort((a: any, b: any) =>
-                b.modelName.localeCompare(a.modelName),
-              );
+              const recommendedOrder = message.data.recommendedModelLabels || [];
+              
+              const sortedModels = [...message.data.models].sort((a: any, b: any) => {
+                const nameA = a.displayName || a.modelName;
+                const nameB = b.displayName || b.modelName;
+                
+                const indexA = recommendedOrder.findIndex((label: string) => nameA.includes(label));
+                const indexB = recommendedOrder.findIndex((label: string) => nameB.includes(label));
+                
+                if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                if (indexA !== -1) return -1;
+                if (indexB !== -1) return 1;
+                
+                return nameA.localeCompare(nameB);
+              });
               setModels(sortedModels);
             }
             // Update planType in currentAccount metadata if it changed
@@ -184,13 +196,101 @@ export const Dashboard: React.FC = () => {
       <Header />
 
       <main className="flex-1 p-4 space-y-6 overflow-y-auto">
+        {/* Model Credits Section */}
+        <section className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+              Model Credits
+            </h2>
+          </div>
+
+          <div className="bg-card border border-border/50 rounded-xl overflow-hidden shadow-sm">
+            <div className="p-3 flex items-center justify-between gap-3">
+              <div className="flex items-center space-x-2 min-w-0">
+                <span className="text-sm font-bold text-foreground truncate">
+                  AI Credits: {quota?.aiCredits ?? "—"}
+                </span>
+                <div className="relative group">
+                  <div className="cursor-help text-muted-foreground/60 hover:text-muted-foreground transition-colors">
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  {/* Custom Tooltip */}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 p-2 bg-background/95 backdrop-blur-md border border-border rounded-lg shadow-xl text-[10px] leading-relaxed text-foreground opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[100]">
+                    When toggled on, Antigravity will use your AI credits to fulfill model requests 
+                    once you're out of model quota. Antigravity will always use your model quota 
+                    first before using AI credits.
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-8 border-transparent border-b-border/95" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2 shrink-0">
+                <button
+                  onClick={() => {
+                    const newValue = !quota?.enableAiCreditOverages;
+                    console.log("[Dashboard] Toggling overages to:", newValue);
+                    vscode.postMessage({
+                      command: "toggleAiCreditOverages",
+                      value: newValue,
+                    });
+                  }}
+                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors focus:outline-none ring-1 ring-border/50 ${
+                    quota?.enableAiCreditOverages ? "bg-primary" : "bg-muted/80"
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                      quota?.enableAiCreditOverages
+                        ? "translate-x-5"
+                        : "translate-x-0.5"
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            <div className="px-3 pb-3 flex items-center space-x-3">
+              <a
+                href={quota?.activityUri || "#"}
+                target="_blank"
+                className="text-[10px] font-bold text-muted-foreground hover:text-foreground hover:underline uppercase tracking-widest transition-colors"
+              >
+                Activity
+              </a>
+              <span className="text-border/50">|</span>
+              <a
+                href={quota?.upgradeUri || "#"}
+                target="_blank"
+                className="text-[10px] font-bold text-primary hover:underline uppercase tracking-widest transition-colors"
+              >
+                Buy Credits
+              </a>
+            </div>
+          </div>
+        </section>
+
         <section className="space-y-3">
+          <h2 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">
+            Model Quota
+          </h2>
           {models.map((model, index) => (
-            <ModelCard 
-              key={model.modelName} 
-              model={model} 
+            <ModelCard
+              key={model.modelName}
+              model={model}
               index={index}
-              getRelativeResetTime={getRelativeResetTime} 
+              getRelativeResetTime={getRelativeResetTime}
             />
           ))}
 

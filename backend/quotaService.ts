@@ -35,11 +35,15 @@ export interface AccountQuota {
   geminiResetTime: number | null;
   promptCredits?: number;
   flowCredits?: number;
+  aiCredits?: number;
+  enableAiCreditOverages?: boolean;
   upgradeUri?: string;
   planType?: string;
   expirationDate?: string;
   name?: string;
   upgradeText?: string;
+  activityUri?: string;
+  recommendedModelLabels?: string[];
 }
 
 interface FetchModelsResponse {
@@ -174,6 +178,8 @@ export class QuotaService extends EventEmitter {
       geminiQuotaPercent: null,
       claudeResetTime: null,
       geminiResetTime: null,
+      aiCredits: undefined,
+      enableAiCreditOverages: undefined,
     };
 
     try {
