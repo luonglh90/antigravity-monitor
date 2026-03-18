@@ -8,7 +8,7 @@
     "type": "git",
     "url": "https://github.com/luonglh90/antigravity-monitor.git"
   },
-  "version": "0.0.7",
+  "version": "0.0.8",
   "icon": "resources/icon.png",
   "engines": {
     "vscode": "^1.85.0"
